@@ -29,7 +29,7 @@
  				    (size_t)w * 4);
  			}
 +			/* ruby: the DSI scanout reads DRAM; clean the CPU copy to it. */
-+			clean_dcache64((addr64_t)dst_pa, (uint32_t)((uint64_t)h * fRowBytes), TRUE);
++			flush_dcache64((addr64_t)dst_pa, (uint32_t)((uint64_t)h * fRowBytes), TRUE);
 +			__asm__ __volatile__("dsb sy" ::: "memory");
 +			if (sweet_fb_dbg_logged < 8) {
 +				sweet_fb_dbg_logged++;
@@ -49,7 +49,7 @@
 +			row[mx] = 0xFFFF00FF;
 +		}
 +	}
-+	clean_dcache64((addr64_t)fPhys, (uint32_t)(64 * fRowBytes), TRUE);
++	flush_dcache64((addr64_t)fPhys, (uint32_t)(64 * fRowBytes), TRUE);
 +	__asm__ __volatile__("dsb sy" ::: "memory");
 +	if (sweet_fb_dbg_logged < 12) {
 +		sweet_fb_dbg_logged++;
