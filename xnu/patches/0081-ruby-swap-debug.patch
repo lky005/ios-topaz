@@ -16,7 +16,7 @@
  static uint64_t sweet_fb_swap_count;
  
  /* Copy each enabled layer's surface into the panel memory (no scaling). */
-@@ -391,14 +393,42 @@
+@@ -391,14 +393,43 @@
  			src = 0;
  		}
  		if (src != 0 && bpe == 4) {
@@ -28,8 +28,9 @@
  				    (const void *)(src + s->offset + (uint64_t)(sy + y) * s->bytesPerRow + (uint64_t)sx * 4),
  				    (size_t)w * 4);
  			}
-+			/* ruby: the DSI scanout reads DRAM; clean the CPU copy to it. */
-+			flush_dcache64((addr64_t)dst_pa, (uint32_t)((uint64_t)h * fRowBytes), TRUE);
++			/* ruby: the DSI scanout reads DRAM; flush the CPU copy to it. */
++			flush_dcache64((addr64_t)(fPixels + (uint64_t)dy * fRowBytes + (uint64_t)dx * 4),
++			    (uint32_t)((uint64_t)h * fRowBytes), FALSE);
 +			__asm__ __volatile__("dsb sy" ::: "memory");
 +			if (sweet_fb_dbg_logged < 8) {
 +				sweet_fb_dbg_logged++;
@@ -49,7 +50,7 @@
 +			row[mx] = 0xFFFF00FF;
 +		}
 +	}
-+	flush_dcache64((addr64_t)fPhys, (uint32_t)(64 * fRowBytes), TRUE);
++	flush_dcache64((addr64_t)fPixels, (uint32_t)(64 * fRowBytes), FALSE);
 +	__asm__ __volatile__("dsb sy" ::: "memory");
 +	if (sweet_fb_dbg_logged < 12) {
 +		sweet_fb_dbg_logged++;
