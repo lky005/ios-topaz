@@ -16,13 +16,15 @@
  static uint64_t sweet_fb_swap_count;
  
  /* Copy each enabled layer's surface into the panel memory (no scaling). */
-@@ -391,14 +393,43 @@
+@@ -391,14 +393,62 @@
  			src = 0;
  		}
  		if (src != 0 && bpe == 4) {
 +			uint64_t dst_pa = (uint64_t)fPhys + (uint64_t)dy * fRowBytes + (uint64_t)dx * 4;
 +			const uint32_t *src0p = (const uint32_t *)(src + s->offset +
 +			    (uint64_t)sy * s->bytesPerRow + (uint64_t)sx * 4);
++			const uint32_t *srccp = (const uint32_t *)(src + s->offset +
++			    (uint64_t)(s->height / 2) * s->bytesPerRow + (uint64_t)(s->width / 2) * 4);
  			for (int32_t y = 0; y < h; y++) {
  				memcpy((void *)(fPixels + (uint64_t)(dy + y) * fRowBytes + (uint64_t)dx * 4),
  				    (const void *)(src + s->offset + (uint64_t)(sy + y) * s->bytesPerRow + (uint64_t)sx * 4),
@@ -34,11 +36,12 @@
 +			__asm__ __volatile__("dsb sy" ::: "memory");
 +			if (sweet_fb_dbg_logged < 8) {
 +				sweet_fb_dbg_logged++;
-+				IOLog("SWEET FB DBG: layer %u id %u src_va=%p dst_va=%p dst_pa=0x%llx w=%d h=%d src0=%08x dst0=%08x\n",
++				IOLog("SWEET FB DBG: layer %u id %u src_va=%p dst_va=%p dst_pa=0x%llx w=%d h=%d src0=%08x srcc=%08x dst0=%08x dstc=%08x\n",
 +				    layer, id, (void *)src,
 +				    (void *)(fPixels + (uint64_t)dy * fRowBytes + (uint64_t)dx * 4),
-+				    dst_pa, w, h, *src0p,
-+				    *(const uint32_t *)(fPixels + (uint64_t)dy * fRowBytes + (uint64_t)dx * 4));
++				    dst_pa, w, h, *src0p, *srccp,
++				    *(const uint32_t *)(fPixels + (uint64_t)dy * fRowBytes + (uint64_t)dx * 4),
++				    *(const uint32_t *)(fPixels + (uint64_t)(fHeight / 2) * fRowBytes + (uint64_t)(fWidth / 2) * 4));
 +			}
  		}
  		s->release();
@@ -52,6 +55,22 @@
 +	}
 +	flush_dcache64((addr64_t)fPixels, (uint32_t)(64 * fRowBytes), FALSE);
 +	__asm__ __volatile__("dsb sy" ::: "memory");
++	/* ruby debug: 64x64 green marker at the panel centre. */
++	{
++		uint32_t cy = fHeight / 2 - 32, cx = fWidth / 2 - 32;
++		for (uint32_t gy = 0; gy < 64; gy++) {
++			uint32_t *row = (uint32_t *)(fPixels + (uint64_t)(cy + gy) * fRowBytes);
++			for (uint32_t gx = 0; gx < 64; gx++) {
++				row[cx + gx] = 0xFF00FF00;
++			}
++		}
++		flush_dcache64((addr64_t)(fPixels + (uint64_t)cy * fRowBytes), (uint32_t)(64 * fRowBytes), FALSE);
++		__asm__ __volatile__("dsb sy" ::: "memory");
++		IOLog("SWEET FB DBG: center va=%p pa=0x%llx px=%08x\n",
++		    (void *)(fPixels + (uint64_t)cy * fRowBytes + (uint64_t)cx * 4),
++		    (uint64_t)fPhys + (uint64_t)cy * fRowBytes + (uint64_t)cx * 4,
++		    *(const uint32_t *)(fPixels + (uint64_t)(fHeight / 2) * fRowBytes + (uint64_t)(fWidth / 2) * 4));
++	}
 +	if (sweet_fb_dbg_logged < 12) {
 +		sweet_fb_dbg_logged++;
 +		IOLog("SWEET FB DBG: marker va=%p pa=0x%llx fPhys=0x%llx fPixels=0x%llx rows=64\n",
