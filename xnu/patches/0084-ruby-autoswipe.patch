@@ -59,9 +59,9 @@
 +static const int *
 +sweetSwipeYs(UInt32 variant, int *count, int *stepMs, int *x)
 +{
-+	static const int shortY[] = { 2360, 2100, 1800, 1500, 1200 };
-+	static const int longY[] = { 2360, 2100, 1800, 1500, 1200, 900, 600, 380 };
-+	static const int mediumY[] = { 2360, 2150, 1900, 1650, 1400, 1150, 900 };
++	static const int shortY[] = { 2390, 2100, 1800, 1500, 1200 };
++	static const int longY[] = { 2390, 2100, 1800, 1500, 1200, 900, 600, 380 };
++	static const int mediumY[] = { 2390, 2150, 1900, 1650, 1400, 1150, 900 };
 +
 +	switch (variant % 3) {
 +	case 0:
